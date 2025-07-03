@@ -2,15 +2,17 @@ package com.mertalptekin.springsecuritydemo.controller;
 
 import com.mertalptekin.springsecuritydemo.dto.LoginRequestDto;
 import com.mertalptekin.springsecuritydemo.dto.RegisterRequestDto;
+import com.mertalptekin.springsecuritydemo.entity.User;
+import com.mertalptekin.springsecuritydemo.repository.UserRepository;
 import com.mertalptekin.springsecuritydemo.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +27,12 @@ public class AuthController {
 
     @Autowired
     private JwtService jwtService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private UserRepository userRepository;
 
 
      @PostMapping("/login")
@@ -53,8 +61,13 @@ public class AuthController {
     @PostMapping("/register")
      public ResponseEntity<?> register(@RequestBody RegisterRequestDto request) {
          // Kayıt işlemleri burada yapılacak.
+
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        userRepository.save(user);
+
          return ResponseEntity.ok("Kayıt başarılı");
      }
-
 
 }

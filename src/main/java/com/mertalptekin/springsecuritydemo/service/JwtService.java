@@ -17,7 +17,8 @@ import java.util.Locale;
 @Service
 public class JwtService {
 
-    private static final String SECRET = "secret";
+    // JWT oluşturmak için kullanılan gizli anahtar.256 bit değerin değerinde üretilmelelidir.
+    private static final String SECRET = "wrD8PwDEtnDhlFoVyQ7q3Up2/aE3RIcIBZnzNFvUwK4=";
 
     public String generateToken(UserDetails userDetails){
         return Jwts.builder()
