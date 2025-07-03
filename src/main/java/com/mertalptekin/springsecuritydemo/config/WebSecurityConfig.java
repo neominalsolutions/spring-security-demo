@@ -1,5 +1,6 @@
 package com.mertalptekin.springsecuritydemo.config;
 
+import com.mertalptekin.springsecuritydemo.filter.JwtRequestFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -7,37 +8,42 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-// Uygulama genelinde Spring Security yapılandırmalarını içerecek sınıf.
 @Configuration
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity
 public class WebSecurityConfig {
+    // filtera dahil olmayacak istekleri ayarladığımız yer
 
     @Autowired
     private AuthenticationProvider authenticationProvider;
 
-    // Uygulama ilk ayağa kaldırıldığında, bu sınıfın yapılandırma metodu çağrılacak.
+    @Autowired
+    private JwtRequestFilter jwtAuthenticationFilter;
+
+
     @Bean
-    public SecurityFilterChain configure(HttpSecurity http) throws Exception {
-        http.csrf(c->c.disable());
-        http.cors(c-> c.disable());
-        // sayfaların private ve public olarak ayrılması için gerekli yapılandırmalar
-        http.authorizeHttpRequests(c -> c
-                .requestMatchers("/api/v1/auth/**").permitAll() // Auth ile ilgili endpointlere herkes erişebilir.
-                .anyRequest().authenticated() // Diğer tüm isteklere kimlik doğrulaması gereklidir.
-        );
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
+        System.out.println("SecurityFilterChain oluşturuluyor...");
+
+        // Cross-Site Request Forgery devre dışı bırakılır
+        http.csrf(AbstractHttpConfigurer::disable);
+        http.cors(AbstractHttpConfigurer::disable);
+        http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+        http.authorizeHttpRequests(authorizeRequests ->
+                authorizeRequests
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .anyRequest().authenticated()
+
+        );
         http.authenticationProvider(authenticationProvider);
-        // APi session state stateless olmalıdır.
-        http.sessionManagement(c2 -> c2.sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Stateless oturum yönetimi kullanıyoruz.
-        );
-        // filter ayarımızıda sonradan ekleyelim.
-        // exception handling ayarları
-        return http.build();
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build(); // Güvenlik filtre zincirini oluşturur
     }
-
 }
-
 
